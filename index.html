@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Student-intervention by cipher982</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Student Intervention</h1>
+      <h2 class="project-tagline">Building a supervised learning model to predict student graduation based on academic performance</h2>
+      <a href="https://github.com/cipher982/Student-Intervention" class="btn">View on GitHub</a>
+      <a href="https://github.com/cipher982/Student-Intervention/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/cipher982/Student-Intervention/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      
+
+<h3>
+<a id="building-a-student-intervention-system" class="anchor" href="#building-a-student-intervention-system" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building a Student Intervention System</h3>
+
+<h2>
+<a id="1-exploring-the-data" class="anchor" href="#1-exploring-the-data" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1. Exploring the Data</h2>
+
+<p>Let's go ahead and read in the student dataset first.</p>
+
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Import libraries</span>
+<span class="pl-k">import</span> numpy <span class="pl-k">as</span> np
+<span class="pl-k">import</span> pandas <span class="pl-k">as</span> pd</pre></div>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Read student data</span>
+student_data <span class="pl-k">=</span> pd.read_csv(<span class="pl-s"><span class="pl-pds">"</span>student-data.csv<span class="pl-pds">"</span></span>)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Student data read successfully!<span class="pl-pds">"</span></span>
+<span class="pl-c"># Note: The last column 'passed' is the target/label, all other are feature columns</span></pre></div>
+
+<pre><code>Student data read successfully!
+</code></pre>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># <span class="pl-k">TODO</span>: Compute desired values - replace each '?' with an appropriate expression/function call</span>
+n_students <span class="pl-k">=</span> np.shape(student_data)[<span class="pl-c1">0</span>]
+n_features <span class="pl-k">=</span> np.shape(student_data)[<span class="pl-c1">1</span>] <span class="pl-k">-</span> <span class="pl-c1">1</span> <span class="pl-c"># Subtract target column</span>
+n_passed <span class="pl-k">=</span> np.shape(student_data[student_data[<span class="pl-s"><span class="pl-pds">'</span>passed<span class="pl-pds">'</span></span>]<span class="pl-k">==</span><span class="pl-s"><span class="pl-pds">'</span>yes<span class="pl-pds">'</span></span>])[<span class="pl-c1">0</span>]
+n_failed <span class="pl-k">=</span> np.shape(student_data[student_data[<span class="pl-s"><span class="pl-pds">'</span>passed<span class="pl-pds">'</span></span>]<span class="pl-k">==</span><span class="pl-s"><span class="pl-pds">'</span>no<span class="pl-pds">'</span></span>])[<span class="pl-c1">0</span>]
+grad_rate <span class="pl-k">=</span> <span class="pl-c1">float</span>(n_passed) <span class="pl-k">/</span> <span class="pl-c1">float</span>(n_students)<span class="pl-k">*</span><span class="pl-c1">100</span>
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Total number of students: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(n_students)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Number of students who passed: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(n_passed)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Number of students who failed: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(n_failed)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Number of features: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(n_features)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Graduation rate of the class: <span class="pl-c1">{<span class="pl-c1">:.2f</span>}</span>%<span class="pl-pds">"</span></span>.format(grad_rate)</pre></div>
+
+<pre><code>Total number of students: 395
+Number of students who passed: 265
+Number of students who failed: 130
+Number of features: 30
+Graduation rate of the class: 67.09%
+</code></pre>
+
+<h2>
+<a id="2-preparing-the-data" class="anchor" href="#2-preparing-the-data" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2. Preparing the Data</h2>
+
+<p>In this section, we will prepare the data for modeling, training and testing.</p>
+
+<h3>
+<a id="identify-feature-and-target-columns" class="anchor" href="#identify-feature-and-target-columns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Identify feature and target columns</h3>
+
+<p>It is often the case that the data you obtain contains non-numeric features. This can be a problem, as most machine learning algorithms expect numeric data to perform computations with.</p>
+
+<p>Let's first separate our data into feature and target columns, and see if any features are non-numeric.<br>
+<strong>Note</strong>: For this dataset, the last column (<code>'passed'</code>) is the target or label we are trying to predict.</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Extract feature (X) and target (y) columns</span>
+feature_cols <span class="pl-k">=</span> <span class="pl-c1">list</span>(student_data.columns[:<span class="pl-k">-</span><span class="pl-c1">1</span>])  <span class="pl-c"># all columns but last are features</span>
+target_col <span class="pl-k">=</span> student_data.columns[<span class="pl-k">-</span><span class="pl-c1">1</span>]  <span class="pl-c"># last column is the target/label</span>
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Feature column(s):-<span class="pl-cce">\n</span><span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(feature_cols)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Target column: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(target_col)
+
+<span class="pl-c1">X_all</span> <span class="pl-k">=</span> student_data[feature_cols]  <span class="pl-c"># feature values for all students</span>
+y_all <span class="pl-k">=</span> student_data[target_col]  <span class="pl-c"># corresponding targets/labels</span>
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span>Feature values:-<span class="pl-pds">"</span></span>
+<span class="pl-c1">print</span> <span class="pl-c1">X_all</span>.head()  <span class="pl-c"># print the first 5 rows</span></pre></div>
+
+<pre><code>Feature column(s):-
+['school', 'sex', 'age', 'address', 'famsize', 'Pstatus', 'Medu', 'Fedu', 'Mjob', 'Fjob', 'reason', 'guardian', 'traveltime', 'studytime', 'failures', 'schoolsup', 'famsup', 'paid', 'activities', 'nursery', 'higher', 'internet', 'romantic', 'famrel', 'freetime', 'goout', 'Dalc', 'Walc', 'health', 'absences']
+Target column: passed
+
+Feature values:-
+  school sex  age address famsize Pstatus  Medu  Fedu     Mjob      Fjob  \
+0     GP   F   18       U     GT3       A     4     4  at_home   teacher   
+1     GP   F   17       U     GT3       T     1     1  at_home     other   
+2     GP   F   15       U     LE3       T     1     1  at_home     other   
+3     GP   F   15       U     GT3       T     4     2   health  services   
+4     GP   F   16       U     GT3       T     3     3    other     other   
+
+    ...    higher internet  romantic  famrel  freetime goout Dalc Walc health  \
+0   ...       yes       no        no       4         3     4    1    1      3   
+1   ...       yes      yes        no       5         3     3    1    1      3   
+2   ...       yes      yes        no       4         3     2    2    3      3   
+3   ...       yes      yes       yes       3         2     2    1    1      5   
+4   ...       yes       no        no       4         3     2    1    2      5   
+
+  absences  
+0        6  
+1        4  
+2       10  
+3        2  
+4        4  
+
+[5 rows x 30 columns]
+</code></pre>
+
+<h3>
+<a id="preprocess-feature-columns" class="anchor" href="#preprocess-feature-columns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Preprocess feature columns</h3>
+
+<p>As you can see, there are several non-numeric columns that need to be converted! Many of them are simply <code>yes</code>/<code>no</code>, e.g. <code>internet</code>. These can be reasonably converted into <code>1</code>/<code>0</code> (binary) values.</p>
+
+<p>Other columns, like <code>Mjob</code> and <code>Fjob</code>, have more than two values, and are known as <em>categorical variables</em>. The recommended way to handle such a column is to create as many columns as possible values (e.g. <code>Fjob_teacher</code>, <code>Fjob_other</code>, <code>Fjob_services</code>, etc.), and assign a <code>1</code> to one of them and <code>0</code> to all others.</p>
+
+<p>These generated columns are sometimes called <em>dummy variables</em>, and we will use the <a href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.get_dummies.html?highlight=get_dummies#pandas.get_dummies"><code>pandas.get_dummies()</code></a> function to perform this transformation.</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Preprocess feature columns</span>
+<span class="pl-k">def</span> <span class="pl-en">preprocess_features</span>(<span class="pl-smi">X</span>):
+    outX <span class="pl-k">=</span> pd.DataFrame(<span class="pl-v">index</span><span class="pl-k">=</span><span class="pl-c1">X</span>.index)  <span class="pl-c"># output dataframe, initially empty</span>
+
+    <span class="pl-c"># Check each column</span>
+    <span class="pl-k">for</span> col, col_data <span class="pl-k">in</span> <span class="pl-c1">X</span>.iteritems():
+        <span class="pl-c"># If data type is non-numeric, try to replace all yes/no values with 1/0</span>
+        <span class="pl-k">if</span> col_data.dtype <span class="pl-k">==</span> <span class="pl-c1">object</span>:
+            col_data <span class="pl-k">=</span> col_data.replace([<span class="pl-s"><span class="pl-pds">'</span>yes<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>no<span class="pl-pds">'</span></span>], [<span class="pl-c1">1</span>, <span class="pl-c1">0</span>])
+        <span class="pl-c"># Note: This should change the data type for yes/no columns to int</span>
+
+        <span class="pl-c"># If still non-numeric, convert to one or more dummy variables</span>
+        <span class="pl-k">if</span> col_data.dtype <span class="pl-k">==</span> <span class="pl-c1">object</span>:
+            col_data <span class="pl-k">=</span> pd.get_dummies(col_data, <span class="pl-v">prefix</span><span class="pl-k">=</span>col)  <span class="pl-c"># e.g. 'school' =&gt; 'school_GP', 'school_MS'</span>
+
+        outX <span class="pl-k">=</span> outX.join(col_data)  <span class="pl-c"># collect column(s) in output dataframe</span>
+
+    <span class="pl-k">return</span> outX
+
+<span class="pl-c1">X_all</span> <span class="pl-k">=</span> preprocess_features(<span class="pl-c1">X_all</span>)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Processed feature columns (<span class="pl-c1">{}</span>):-<span class="pl-cce">\n</span><span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(<span class="pl-c1">len</span>(<span class="pl-c1">X_all</span>.columns), <span class="pl-c1">list</span>(<span class="pl-c1">X_all</span>.columns))</pre></div>
+
+<pre><code>Processed feature columns (48):-
+['school_GP', 'school_MS', 'sex_F', 'sex_M', 'age', 'address_R', 'address_U', 'famsize_GT3', 'famsize_LE3', 'Pstatus_A', 'Pstatus_T', 'Medu', 'Fedu', 'Mjob_at_home', 'Mjob_health', 'Mjob_other', 'Mjob_services', 'Mjob_teacher', 'Fjob_at_home', 'Fjob_health', 'Fjob_other', 'Fjob_services', 'Fjob_teacher', 'reason_course', 'reason_home', 'reason_other', 'reason_reputation', 'guardian_father', 'guardian_mother', 'guardian_other', 'traveltime', 'studytime', 'failures', 'schoolsup', 'famsup', 'paid', 'activities', 'nursery', 'higher', 'internet', 'romantic', 'famrel', 'freetime', 'goout', 'Dalc', 'Walc', 'health', 'absences']
+</code></pre>
+
+<h3>
+<a id="split-data-into-training-and-test-sets" class="anchor" href="#split-data-into-training-and-test-sets" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Split data into training and test sets</h3>
+
+<p>So far, we have converted all <em>categorical</em> features into numeric values. In this next step, we split the data (both features and corresponding labels) into training and test sets.</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-k">import</span> sklearn.cross_validation <span class="pl-k">as</span> cv
+
+
+<span class="pl-c"># First, decide how many training vs test samples you want</span>
+num_all <span class="pl-k">=</span> student_data.shape[<span class="pl-c1">0</span>]  <span class="pl-c"># same as len(student_data)</span>
+num_train <span class="pl-k">=</span> <span class="pl-c1">300</span>  <span class="pl-c"># about 75% of the data</span>
+num_test <span class="pl-k">=</span> num_all <span class="pl-k">-</span> num_train
+num_ratio <span class="pl-k">=</span> <span class="pl-c1">float</span>(num_train) <span class="pl-k">/</span> <span class="pl-c1">float</span>(num_all)
+
+<span class="pl-c"># <span class="pl-k">TODO</span>: Then, select features (X) and corresponding labels (y) for the training and test sets</span>
+<span class="pl-c"># Note: Shuffle the data or randomly select samples to avoid any bias due to ordering in the dataset</span>
+
+<span class="pl-c1">X_train</span>, <span class="pl-c1">X_test</span>, y_train, y_test <span class="pl-k">=</span> cv.train_test_split(<span class="pl-c1">X_all</span>, y_all, <span class="pl-v">test_size</span><span class="pl-k">=</span>(<span class="pl-c1">1</span> <span class="pl-k">-</span> num_ratio), <span class="pl-v">random_state</span><span class="pl-k">=</span><span class="pl-c1">1234</span>)
+
+
+
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Training set: <span class="pl-c1">{}</span> samples<span class="pl-pds">"</span></span>.format(<span class="pl-c1">X_train</span>.shape[<span class="pl-c1">0</span>])
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Test set: <span class="pl-c1">{}</span> samples<span class="pl-pds">"</span></span>.format(<span class="pl-c1">X_test</span>.shape[<span class="pl-c1">0</span>])
+<span class="pl-c"># Note: If you need a validation set, extract it from within training data</span></pre></div>
+
+<pre><code>Training set: 300 samples
+Test set: 95 samples
+</code></pre>
+
+<h2>
+<a id="3-training-and-evaluating-models" class="anchor" href="#3-training-and-evaluating-models" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3. Training and Evaluating Models</h2>
+
+<p>Choose 3 supervised learning models that are available in scikit-learn, and appropriate for this problem. For each model:</p>
+
+<ul>
+<li>What are the general applications of this model? What are its strengths and weaknesses?</li>
+<li>Given what you know about the data so far, why did you choose this model to apply?</li>
+<li>Fit this model to the training data, try to predict labels (for both training and test sets), and measure the F<sub>1</sub> score. Repeat this process with different training set sizes (100, 200, 300), keeping test set constant.</li>
+</ul>
+
+<p>Produce a table showing training time, prediction time, F<sub>1</sub> score on training set and F<sub>1</sub> score on test set, for each training set size.</p>
+
+<p>Note: You need to produce 3 such tables - one for each model.</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Train a model</span>
+<span class="pl-k">import</span> time
+
+<span class="pl-c">#timetotrain = []</span>
+<span class="pl-k">def</span> <span class="pl-en">train_classifier</span>(<span class="pl-smi">clf</span>, <span class="pl-smi">X_train</span>, <span class="pl-smi">y_train</span>):
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Training <span class="pl-c1">{}</span>...<span class="pl-pds">"</span></span>.format(clf.<span class="pl-c1">__class__</span>.<span class="pl-c1">__name__</span>)
+    start <span class="pl-k">=</span> time.time()
+    clf.fit(<span class="pl-c1">X_train</span>, y_train)
+    end <span class="pl-k">=</span> time.time()
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Done!<span class="pl-cce">\n</span>Training time (secs): <span class="pl-c1">{<span class="pl-c1">:.3f</span>}</span><span class="pl-pds">"</span></span>.format(end <span class="pl-k">-</span> start)
+    <span class="pl-c">#timetotrain.append(end - start)</span>
+
+<span class="pl-c"># <span class="pl-k">TODO</span>: Choose a model, import it and instantiate an object</span>
+<span class="pl-k">from</span> sklearn.linear_model <span class="pl-k">import</span> LogisticRegression 
+<span class="pl-c">#from sklearn.neural_network import MLPClassifier</span>
+<span class="pl-c">#from sklearn.ensemble import RandomForestClassifier</span>
+clf <span class="pl-k">=</span> LogisticRegression()
+
+<span class="pl-c"># Fit model to training data</span>
+train_classifier(clf, <span class="pl-c1">X_train</span>, y_train)
+
+<span class="pl-c"># note: using entire training set here</span>
+<span class="pl-c">#print clf  # you can inspect the learned model by printing it</span></pre></div>
+
+<pre><code>Training LogisticRegression...
+Done!
+Training time (secs): 0.005
+</code></pre>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Predict on training set and compute F1 score</span>
+<span class="pl-k">from</span> sklearn.metrics <span class="pl-k">import</span> f1_score
+
+<span class="pl-k">def</span> <span class="pl-en">predict_labels</span>(<span class="pl-smi">clf</span>, <span class="pl-smi">features</span>, <span class="pl-smi">target</span>):
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Predicting labels using <span class="pl-c1">{}</span>...<span class="pl-pds">"</span></span>.format(clf.<span class="pl-c1">__class__</span>.<span class="pl-c1">__name__</span>)
+    start <span class="pl-k">=</span> time.time()
+    y_pred <span class="pl-k">=</span> clf.predict(features)
+    end <span class="pl-k">=</span> time.time()
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Done!<span class="pl-cce">\n</span>Prediction time (secs): <span class="pl-c1">{<span class="pl-c1">:.3f</span>}</span><span class="pl-pds">"</span></span>.format(end <span class="pl-k">-</span> start)
+    <span class="pl-k">return</span> f1_score(target.values, y_pred, <span class="pl-v">pos_label</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>yes<span class="pl-pds">'</span></span>)
+
+train_f1_score <span class="pl-k">=</span> predict_labels(clf, <span class="pl-c1">X_train</span>, y_train)
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>F1 score for training set: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(train_f1_score)</pre></div>
+
+<pre><code>Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.001
+F1 score for training set: 0.831050228311
+</code></pre>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Predict on test data</span>
+<span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>F1 score for test set: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(predict_labels(clf, <span class="pl-c1">X_test</span>, y_test))</pre></div>
+
+<pre><code>Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.000
+F1 score for test set: 0.8
+</code></pre>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Train and predict using different training set sizes</span>
+
+<span class="pl-k">def</span> <span class="pl-en">train_predict</span>(<span class="pl-smi">clf</span>, <span class="pl-smi">X_train</span>, <span class="pl-smi">y_train</span>, <span class="pl-smi">X_test</span>, <span class="pl-smi">y_test</span>):
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>------------------------------------------<span class="pl-pds">"</span></span>
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>Training set size: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(<span class="pl-c1">len</span>(<span class="pl-c1">X_train</span>))
+    train_classifier(clf, <span class="pl-c1">X_train</span>, y_train)
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>F1 score for training set: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(predict_labels(clf, <span class="pl-c1">X_train</span>, y_train))
+    <span class="pl-c1">print</span> <span class="pl-s"><span class="pl-pds">"</span>F1 score for test set: <span class="pl-c1">{}</span><span class="pl-pds">"</span></span>.format(predict_labels(clf, <span class="pl-c1">X_test</span>, y_test))
+
+
+<span class="pl-c"># <span class="pl-k">TODO</span>: Run the helper function above for desired subsets of training data</span>
+<span class="pl-c"># Note: Keep the test set constant</span>
+
+<span class="pl-c"># Sample slices the DF/Series and also randomizes</span>
+<span class="pl-c1">X_train_100</span> <span class="pl-k">=</span> pd.DataFrame.sample(<span class="pl-c1">X_train</span>, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">100</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+y_train_100 <span class="pl-k">=</span>    pd.Series.sample(y_train, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">100</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+<span class="pl-c1">X_train_200</span> <span class="pl-k">=</span> pd.DataFrame.sample(<span class="pl-c1">X_train</span>, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">200</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+y_train_200 <span class="pl-k">=</span>    pd.Series.sample(y_train, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">200</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+<span class="pl-c1">X_train_300</span> <span class="pl-k">=</span> pd.DataFrame.sample(<span class="pl-c1">X_train</span>, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">300</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+y_train_300 <span class="pl-k">=</span>    pd.Series.sample(y_train, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">300</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+
+
+train_predict(clf, <span class="pl-c1">X_train_100</span>, y_train_100, <span class="pl-c1">X_test</span>, y_test)<span class="pl-id">;</span>
+train_predict(clf, <span class="pl-c1">X_train_200</span>, y_train_200, <span class="pl-c1">X_test</span>, y_test)<span class="pl-id">;</span>
+train_predict(clf, <span class="pl-c1">X_train_300</span>, y_train_300, <span class="pl-c1">X_test</span>, y_test)<span class="pl-id">;</span></pre></div>
+
+<pre><code>------------------------------------------
+Training set size: 100
+Training LogisticRegression...
+Done!
+Training time (secs): 0.003
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.000
+F1 score for training set: 0.906832298137
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.000
+F1 score for test set: 0.759124087591
+------------------------------------------
+Training set size: 200
+Training LogisticRegression...
+Done!
+Training time (secs): 0.003
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.000
+F1 score for training set: 0.865979381443
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.001
+F1 score for test set: 0.788321167883
+------------------------------------------
+Training set size: 300
+Training LogisticRegression...
+Done!
+Training time (secs): 0.005
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.000
+F1 score for training set: 0.831050228311
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.001
+F1 score for test set: 0.8
+</code></pre>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># While playing around with the training set size, I tried incredibly low numbers to see how they performed. </span>
+<span class="pl-c"># That's when I stumbled on the fact that a training size of 11 actually performed better than using a size of 300. </span>
+<span class="pl-c"># I'm not sure of the exact reasons behind this, but would be interested to learn why.</span>
+
+<span class="pl-c1">X_train_11</span> <span class="pl-k">=</span> pd.DataFrame.sample(<span class="pl-c1">X_train</span>, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">11</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+y_train_11 <span class="pl-k">=</span>    pd.Series.sample(y_train, <span class="pl-v">n</span> <span class="pl-k">=</span> <span class="pl-c1">11</span>, <span class="pl-v">random_state</span> <span class="pl-k">=</span> <span class="pl-c1">1234</span>)
+
+train_predict(clf, <span class="pl-c1">X_train_11</span>, y_train_11, <span class="pl-c1">X_test</span>, y_test)</pre></div>
+
+<pre><code>------------------------------------------
+Training set size: 11
+Training LogisticRegression...
+Done!
+Training time (secs): 0.001
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.000
+F1 score for training set: 1.0
+Predicting labels using LogisticRegression...
+Done!
+Prediction time (secs): 0.000
+F1 score for test set: 0.805031446541
+</code></pre>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># <span class="pl-k">TODO</span>: Train and predict using two other models</span>
+
+<span class="pl-c"># Train and predict a basic decision tree classifier</span>
+<span class="pl-k">from</span> sklearn <span class="pl-k">import</span> tree
+clf <span class="pl-k">=</span> tree.DecisionTreeClassifier()
+train_predict(clf, <span class="pl-c1">X_train_100</span>, y_train_100, <span class="pl-c1">X_test</span>, y_test)
+train_predict(clf, <span class="pl-c1">X_train_200</span>, y_train_200, <span class="pl-c1">X_test</span>, y_test)
+train_predict(clf, <span class="pl-c1">X_train_300</span>, y_train_300, <span class="pl-c1">X_test</span>, y_test)
+
+<span class="pl-c"># Train and predict a gradient boosting classifier</span>
+<span class="pl-k">from</span> sklearn.ensemble <span class="pl-k">import</span> GradientBoostingClassifier
+clf <span class="pl-k">=</span> GradientBoostingClassifier(<span class="pl-v">n_estimators</span><span class="pl-k">=</span><span class="pl-c1">100</span>, <span class="pl-v">learning_rate</span><span class="pl-k">=</span><span class="pl-c1">.1</span>, <span class="pl-v">max_depth</span><span class="pl-k">=</span><span class="pl-c1">3</span>, <span class="pl-v">random_state</span><span class="pl-k">=</span><span class="pl-c1">1234</span>).fit(<span class="pl-c1">X_train</span>, y_train)
+train_predict(clf, <span class="pl-c1">X_train_100</span>, y_train_100, <span class="pl-c1">X_test</span>, y_test)
+train_predict(clf, <span class="pl-c1">X_train_200</span>, y_train_200, <span class="pl-c1">X_test</span>, y_test)
+train_predict(clf, <span class="pl-c1">X_train_300</span>, y_train_300, <span class="pl-c1">X_test</span>, y_test)
+
+</pre></div>
+
+<pre><code>------------------------------------------
+Training set size: 100
+Training DecisionTreeClassifier...
+Done!
+Training time (secs): 0.010
+Predicting labels using DecisionTreeClassifier...
+Done!
+Prediction time (secs): 0.001
+F1 score for training set: 1.0
+Predicting labels using DecisionTreeClassifier...
+Done!
+Prediction time (secs): 0.000
+F1 score for test set: 0.744186046512
+------------------------------------------
+Training set size: 200
+Training DecisionTreeClassifier...
+Done!
+Training time (secs): 0.002
+Predicting labels using DecisionTreeClassifier...
+Done!
+Prediction time (secs): 0.000
+F1 score for training set: 1.0
+Predicting labels using DecisionTreeClassifier...
+Done!
+Prediction time (secs): 0.000
+F1 score for test set: 0.709677419355
+------------------------------------------
+Training set size: 300
+Training DecisionTreeClassifier...
+Done!
+Training time (secs): 0.003
+Predicting labels using DecisionTreeClassifier...
+Done!
+Prediction time (secs): 0.001
+F1 score for training set: 1.0
+Predicting labels using DecisionTreeClassifier...
+Done!
+Prediction time (secs): 0.000
+F1 score for test set: 0.650406504065
+------------------------------------------
+Training set size: 100
+Training GradientBoostingClassifier...
+Done!
+Training time (secs): 0.078
+Predicting labels using GradientBoostingClassifier...
+Done!
+Prediction time (secs): 0.003
+F1 score for training set: 1.0
+Predicting labels using GradientBoostingClassifier...
+Done!
+Prediction time (secs): 0.001
+F1 score for test set: 0.785185185185
+------------------------------------------
+Training set size: 200
+Training GradientBoostingClassifier...
+Done!
+Training time (secs): 0.109
+Predicting labels using GradientBoostingClassifier...
+Done!
+Prediction time (secs): 0.001
+F1 score for training set: 0.992805755396
+Predicting labels using GradientBoostingClassifier...
+Done!
+Prediction time (secs): 0.001
+F1 score for test set: 0.761194029851
+------------------------------------------
+Training set size: 300
+Training GradientBoostingClassifier...
+Done!
+Training time (secs): 0.136
+Predicting labels using GradientBoostingClassifier...
+Done!
+Prediction time (secs): 0.001
+F1 score for training set: 0.97572815534
+Predicting labels using GradientBoostingClassifier...
+Done!
+Prediction time (secs): 0.000
+F1 score for test set: 0.820143884892
+</code></pre>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># Create the table / DataFrame - Logistic Regression</span>
+
+columns <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>Training set size:<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>100<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>200<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>300<span class="pl-pds">'</span></span>]
+data <span class="pl-k">=</span> np.array([[<span class="pl-s"><span class="pl-pds">'</span>Training time (secs)<span class="pl-pds">'</span></span>,<span class="pl-c1">0.003</span>,<span class="pl-c1">0.003</span>,<span class="pl-c1">0.005</span>], [<span class="pl-s"><span class="pl-pds">'</span>Prediction time (secs)<span class="pl-pds">'</span></span>,<span class="pl-c1">0.000</span>,<span class="pl-c1">0.001</span>,<span class="pl-c1">0.001</span>],[<span class="pl-s"><span class="pl-pds">'</span>F1 score for training set<span class="pl-pds">'</span></span>,<span class="pl-c1">0.90683</span>,<span class="pl-c1">0.86598</span>,<span class="pl-c1">0.83105</span>],[<span class="pl-s"><span class="pl-pds">'</span>F1 score for test set<span class="pl-pds">'</span></span>,<span class="pl-c1">0.75912</span>,<span class="pl-c1">0.788321</span>,<span class="pl-c1">0.8</span>]])
+
+LogRegTable <span class="pl-k">=</span> pd.DataFrame(data, <span class="pl-v">columns</span> <span class="pl-k">=</span> columns)
+
+<span class="pl-c"># Create the table / DataFrame - Decision Tree</span>
+
+columns <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>Training set size:<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>100<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>200<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>300<span class="pl-pds">'</span></span>]
+data2 <span class="pl-k">=</span> np.array([[<span class="pl-s"><span class="pl-pds">'</span>Training time (secs)<span class="pl-pds">'</span></span>,<span class="pl-c1">0.010</span>,<span class="pl-c1">0.002</span>,<span class="pl-c1">0.003</span>], [<span class="pl-s"><span class="pl-pds">'</span>Prediction time (secs)<span class="pl-pds">'</span></span>,<span class="pl-c1">0.000</span>,<span class="pl-c1">0.000</span>,<span class="pl-c1">0.000</span>],[<span class="pl-s"><span class="pl-pds">'</span>F1 score for training set<span class="pl-pds">'</span></span>,<span class="pl-c1">1.0</span>,<span class="pl-c1">1.0</span>,<span class="pl-c1">1.0</span>],[<span class="pl-s"><span class="pl-pds">'</span>F1 score for test set<span class="pl-pds">'</span></span>,<span class="pl-c1">0.74419</span>,<span class="pl-c1">0.70967</span>,<span class="pl-c1">0.650407</span>]])
+
+DecTreeTable <span class="pl-k">=</span> pd.DataFrame(data2, <span class="pl-v">columns</span> <span class="pl-k">=</span> columns)
+
+<span class="pl-c"># Create the table / DataFrame - Gradient Boosting</span>
+
+columns <span class="pl-k">=</span> [<span class="pl-s"><span class="pl-pds">'</span>Training set size:<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>100<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>200<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>300<span class="pl-pds">'</span></span>]
+data3 <span class="pl-k">=</span> np.array([[<span class="pl-s"><span class="pl-pds">'</span>Training time (secs)<span class="pl-pds">'</span></span>,<span class="pl-c1">0.078</span>,<span class="pl-c1">0.109</span>,<span class="pl-c1">0.136</span>], [<span class="pl-s"><span class="pl-pds">'</span>Prediction time (secs)<span class="pl-pds">'</span></span>,<span class="pl-c1">0.001</span>,<span class="pl-c1">0.001</span>,<span class="pl-c1">0.000</span>],[<span class="pl-s"><span class="pl-pds">'</span>F1 score for training set<span class="pl-pds">'</span></span>,<span class="pl-c1">1.0</span>,<span class="pl-c1">0.99281</span>,<span class="pl-c1">0.975728</span>],[<span class="pl-s"><span class="pl-pds">'</span>F1 score for test set<span class="pl-pds">'</span></span>,<span class="pl-c1">0.78519</span>,<span class="pl-c1">0.761194</span>,<span class="pl-c1">0.821439</span>]])
+
+GradBoostTable <span class="pl-k">=</span> pd.DataFrame(data3, <span class="pl-v">columns</span> <span class="pl-k">=</span> columns)</pre></div>
+
+<div class="highlight highlight-source-python"><pre>LogRegTable</pre></div>
+
+<div>
+<table border="1">
+  <thead>
+    <tr>
+      <th></th>
+      <th>Training set size:</th>
+      <th>100</th>
+      <th>200</th>
+      <th>300</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Training time (secs)</td>
+      <td>0.003</td>
+      <td>0.003</td>
+      <td>0.005</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Prediction time (secs)</td>
+      <td>0.0</td>
+      <td>0.001</td>
+      <td>0.001</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>F1 score for training set</td>
+      <td>0.90683</td>
+      <td>0.86598</td>
+      <td>0.83105</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>F1 score for test set</td>
+      <td>0.75912</td>
+      <td>0.788321</td>
+      <td>0.8</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight highlight-source-python"><pre>DecTreeTable</pre></div>
+
+<div>
+<table border="1">
+  <thead>
+    <tr>
+      <th></th>
+      <th>Training set size:</th>
+      <th>100</th>
+      <th>200</th>
+      <th>300</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Training time (secs)</td>
+      <td>0.01</td>
+      <td>0.002</td>
+      <td>0.003</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Prediction time (secs)</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>F1 score for training set</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>F1 score for test set</td>
+      <td>0.74419</td>
+      <td>0.70967</td>
+      <td>0.650407</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight highlight-source-python"><pre>GradBoostTable</pre></div>
+
+<div>
+<table border="1">
+  <thead>
+    <tr>
+      <th></th>
+      <th>Training set size:</th>
+      <th>100</th>
+      <th>200</th>
+      <th>300</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Training time (secs)</td>
+      <td>0.078</td>
+      <td>0.109</td>
+      <td>0.136</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Prediction time (secs)</td>
+      <td>0.001</td>
+      <td>0.001</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>F1 score for training set</td>
+      <td>1.0</td>
+      <td>0.99281</td>
+      <td>0.975728</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>F1 score for test set</td>
+      <td>0.78519</td>
+      <td>0.761194</td>
+      <td>0.821439</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-c"># <span class="pl-k">TODO</span>: Fine-tune your model and report the best F1 score</span>
+<span class="pl-k">from</span> sklearn <span class="pl-k">import</span> grid_search
+<span class="pl-k">from</span> sklearn.metrics <span class="pl-k">import</span> f1_score
+<span class="pl-k">from</span> sklearn.metrics <span class="pl-k">import</span> make_scorer
+f1_scorer <span class="pl-k">=</span> make_scorer(f1_score, <span class="pl-v">pos_label</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>yes<span class="pl-pds">"</span></span>)
+
+
+<span class="pl-c"># Set the parameters to search, Logistic Regression is relatively simple, not many parameters</span>
+myparameters <span class="pl-k">=</span> {<span class="pl-s"><span class="pl-pds">'</span>C<span class="pl-pds">'</span></span>: [<span class="pl-c1">0.0001</span>, <span class="pl-c1">0.001</span>, <span class="pl-c1">0.01</span>,<span class="pl-c1">0.05</span>, <span class="pl-c1">0.1</span>,<span class="pl-c1">0.5</span>, <span class="pl-c1">1</span>,<span class="pl-c1">5</span>, <span class="pl-c1">10</span>, <span class="pl-c1">100</span>, <span class="pl-c1">500</span>,<span class="pl-c1">1000</span>, <span class="pl-c1">10000</span>] }
+clf <span class="pl-k">=</span> grid_search.GridSearchCV(LogisticRegression(<span class="pl-v">penalty</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>l2<span class="pl-pds">'</span></span>), <span class="pl-v">scoring</span> <span class="pl-k">=</span> f1_scorer, <span class="pl-v">param_grid</span> <span class="pl-k">=</span> myparameters)
+
+train_predict(clf, <span class="pl-c1">X_train_300</span>, y_train_300, <span class="pl-c1">X_test</span>, y_test)
+</pre></div>
+
+<pre><code>------------------------------------------
+Training set size: 300
+Training GridSearchCV...
+Done!
+Training time (secs): 0.356
+Predicting labels using GridSearchCV...
+Done!
+Prediction time (secs): 0.000
+F1 score for training set: 0.802395209581
+Predicting labels using GridSearchCV...
+Done!
+Prediction time (secs): 0.001
+F1 score for test set: 0.805031446541
+</code></pre>
+
+<h3>
+<a id="--what-is-the-models-final-f1-score" class="anchor" href="#--what-is-the-models-final-f1-score" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>- What is the model's final F<sub>1</sub> score?</h3>
+
+<h4>
+<a id="answer" class="anchor" href="#answer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Answer:</h4>
+
+<p>After tuning for possible parameter values, I am only able to obtain an 80.5% F<sub>1</sub> score. Which is just slightly higher than what the model was able to get before the grid search, at 80%.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/cipher982/Student-Intervention">Student-intervention</a> is maintained by <a href="https://github.com/cipher982">cipher982</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
